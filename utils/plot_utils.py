@@ -29,3 +29,34 @@ class PlotUtils:
             plt.show()
 
         plt.close()
+
+    @staticmethod
+    def draw_histogram(
+            x_values,
+            x_label="Value",
+            y_label="Frequency",
+            title=None,
+            bins=30,
+            save_path=None,
+            figsize=(6, 5),
+            show=True
+    ):
+        plt.figure(figsize=figsize)
+
+        plt.hist(x_values.dropna(), bins=bins)
+
+        plt.xlabel(x_label)
+        plt.ylabel(y_label)
+
+        if title is not None:
+            plt.title(title)
+
+        plt.tight_layout()
+
+        if save_path:
+            plt.savefig(save_path, dpi=300)
+
+        if show:
+            plt.show()
+
+        plt.close()

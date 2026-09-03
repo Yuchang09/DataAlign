@@ -37,3 +37,10 @@ class DataUtils:
             mask = df[column] != threshold
 
         return df[mask]
+
+    @staticmethod
+    def reset_row_numbers(df, drop = False):
+        if drop:
+            return df.reset_index(drop=True)
+
+        return df.reset_index()
