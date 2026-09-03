@@ -1,2 +1,2 @@
 class DataConfig:
-    FilePath = r"C:\imageripping\m6d3\20260128_timeseries_m6_d3_930_las321p900_29.3fps_1x_int86_tonepuff-245\20260128_timeseries_m6_d3_930_las321p900_29.3fps_1x_int86_tonepuff-245_Cycle00001_VoltageRecording_001.csv"
+    FilePath = r"C:\imageripping\m3d3retest\20260128_timeseries_m3_d3_930_las321p900_29.3fps_1x_int86_testavg8-246\20260128_timeseries_m3_d3_930_las321p900_29.3fps_1x_int86_testavg8-246_Cycle00001_VoltageRecording_001.csv"

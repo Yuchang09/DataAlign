@@ -73,3 +73,30 @@ class AnalysisUtil:
             return signal.iloc[peaks], df[time_column].iloc[peaks]
 
         return df[time_column].iloc[peaks]
+
+    @staticmethod
+    def calculate_puff_tone_difference(tone_times, puff_times):
+
+        results = []
+
+        for puff_time in puff_times:
+
+            # Find tones that occurred before this puff
+            previous_tones = tone_times[tone_times < puff_time]
+
+            if len(previous_tones) == 0:
+                # No tone before this puff
+                continue
+
+            # The last tone before the puff
+            nearest_tone = previous_tones.iloc[-1]
+
+            difference = puff_time - nearest_tone
+
+            results.append({
+                "tone_time": nearest_tone,
+                "puff_time": puff_time,
+                "difference": difference
+            })
+
+        return pd.DataFrame(results)
