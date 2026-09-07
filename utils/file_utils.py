@@ -1,7 +1,6 @@
 import pandas as pd
 from utils.msg_utils import Msg
 from scipy.io import loadmat
-
 class FileUtils:
 
     @staticmethod

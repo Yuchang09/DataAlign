@@ -9,8 +9,8 @@ class AnalysisUtil:
             df,
             signal_column,
             time_column,
-            prominence=1,
-            values=False
+            threshold,
+            onset = True
     ):
 
         if isinstance(signal_column, int):
@@ -63,16 +63,15 @@ class AnalysisUtil:
 
         signal = df[signal_column]
 
-        peaks, properties = find_peaks(
-            signal,
-            prominence=prominence
-        )
+        above_threshold = signal >= threshold
 
-        # Return peak values and times
-        if values:
-            return signal.iloc[peaks], df[time_column].iloc[peaks]
+        if onset:
+            event = above_threshold & ~above_threshold.shift(fill_value=False)
+        else:
+            event = above_threshold & ~above_threshold.shift(-1, fill_value=False)
 
-        return df[time_column].iloc[peaks]
+        return df.loc[event, time_column]
+
 
     @staticmethod
     def calculate_puff_tone_difference(tone_times, puff_times):
@@ -100,3 +99,74 @@ class AnalysisUtil:
             })
 
         return pd.DataFrame(results)
+
+    @staticmethod
+    def build_event_dataframe(
+            tone_onset,
+            tone_offset,
+            puff_onset,
+            puff_offset
+    ):
+        result = pd.DataFrame({
+            "tone_onset_time": tone_onset.values,
+            "tone_onset_index": tone_onset.index,
+            "tone_offset_time": tone_offset.values,
+            "tone_offset_index": tone_offset.index
+        })
+
+        result["puff_onset_time"] = pd.NA
+        result["puff_onset_index"] = pd.NA
+        result["puff_offset_time"] = pd.NA
+        result["puff_offset_index"] = pd.NA
+
+        for puff_index, puff_time in puff_onset.items():
+
+            previous_tones = tone_onset[
+                tone_onset < puff_time
+                ]
+
+            if previous_tones.empty:
+                continue
+
+            tone_index = previous_tones.index[-1]
+
+            tone_row = result.index[
+                result["tone_onset_index"] == tone_index
+                ][0]
+
+            # Add puff information
+            result.loc[tone_row, "puff_onset_time"] = puff_time
+            result.loc[tone_row, "puff_onset_index"] = puff_index
+
+            previous_offsets = puff_offset[
+                puff_offset.index > puff_index
+                ]
+
+            if not previous_offsets.empty:
+                offset_index = previous_offsets.index[0]
+                offset_time = previous_offsets.iloc[0]
+
+                result.loc[tone_row, "puff_offset_time"] = offset_time
+                result.loc[tone_row, "puff_offset_index"] = offset_index
+
+        result["ISI_length"] = (
+                result["puff_onset_time"]
+                - result["tone_offset_time"]
+        )
+
+        result["tone_puff_difference"] = (
+                result["puff_onset_time"]
+                - result["tone_onset_time"]
+        )
+
+        result["tone_length"] = (
+            result["tone_offset_time"]
+            - result["tone_onset_time"]
+        )
+
+        result["puff_length"] = (
+            result["puff_offset_time"]
+            - result["puff_onset_time"]
+        )
+
+        return result
