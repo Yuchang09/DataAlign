@@ -41,7 +41,13 @@ def filter_data():
     puff_path = PathUtils.join_path(mouse_file_dir, f"{mouse_id}_puff_offset.csv")
     FileUtils.write_csv_file(puff_path, puff_offset_time)
 
+
+
     trails_df = AnalysisUtil.build_event_dataframe(tone_onset, tone_offset, puff_onset, puff_offset)
+    trails_df = AnalysisUtil.limit_difference(trails_df, start="tone_onset_index", end="puff_offset_index",threshold=31)
+    trails_df = AnalysisUtil.limit_difference(trails_df, start="tone_onset_index", end="tone_offset_index",threshold=9)
+    trails_df = AnalysisUtil.limit_difference(trails_df, start="tone_offset_index", end="puff_onset_index", threshold=16)
+    trails_df = AnalysisUtil.add_diff(trails_df)
     trail_path = PathUtils.join_path(mouse_file_dir, f"{mouse_id}_trails.csv")
     FileUtils.write_csv_file(trail_path, trails_df)
 

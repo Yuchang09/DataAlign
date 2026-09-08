@@ -74,31 +74,18 @@ class AnalysisUtil:
 
 
     @staticmethod
-    def calculate_puff_tone_difference(tone_times, puff_times):
+    def limit_difference(df, start, end, threshold):
+        difference = df[end] - df[start]
 
-        results = []
+        mask = (
+                df[start].notna()
+                & df[end].notna()
+                & (difference != threshold)
+        )
 
-        for puff_time in puff_times:
+        df.loc[mask, end] = df.loc[mask, start] + threshold
 
-            # Find tones that occurred before this puff
-            previous_tones = tone_times[tone_times < puff_time]
-
-            if len(previous_tones) == 0:
-                # No tone before this puff
-                continue
-
-            # The last tone before the puff
-            nearest_tone = previous_tones.iloc[-1]
-
-            difference = puff_time - nearest_tone
-
-            results.append({
-                "tone_time": nearest_tone,
-                "puff_time": puff_time,
-                "difference": difference
-            })
-
-        return pd.DataFrame(results)
+        return df
 
     @staticmethod
     def build_event_dataframe(
@@ -108,15 +95,11 @@ class AnalysisUtil:
             puff_offset
     ):
         result = pd.DataFrame({
-            "tone_onset_time": tone_onset.values,
             "tone_onset_index": tone_onset.index,
-            "tone_offset_time": tone_offset.values,
             "tone_offset_index": tone_offset.index
         })
 
-        result["puff_onset_time"] = pd.NA
         result["puff_onset_index"] = pd.NA
-        result["puff_offset_time"] = pd.NA
         result["puff_offset_index"] = pd.NA
 
         for puff_index, puff_time in puff_onset.items():
@@ -135,7 +118,6 @@ class AnalysisUtil:
                 ][0]
 
             # Add puff information
-            result.loc[tone_row, "puff_onset_time"] = puff_time
             result.loc[tone_row, "puff_onset_index"] = puff_index
 
             previous_offsets = puff_offset[
@@ -144,29 +126,30 @@ class AnalysisUtil:
 
             if not previous_offsets.empty:
                 offset_index = previous_offsets.index[0]
-                offset_time = previous_offsets.iloc[0]
 
-                result.loc[tone_row, "puff_offset_time"] = offset_time
                 result.loc[tone_row, "puff_offset_index"] = offset_index
 
+        return result
+
+    @staticmethod
+    def add_diff(result):
         result["ISI_length"] = (
-                result["puff_onset_time"]
-                - result["tone_offset_time"]
+                result["puff_onset_index"]
+                - result["tone_offset_index"]
         )
 
-        result["tone_puff_difference"] = (
-                result["puff_onset_time"]
-                - result["tone_onset_time"]
+        result["trail_length"] = (
+                result["puff_offset_index"]
+                - result["tone_onset_index"]
         )
 
         result["tone_length"] = (
-            result["tone_offset_time"]
-            - result["tone_onset_time"]
+            result["tone_offset_index"]
+            - result["tone_onset_index"]
         )
 
         result["puff_length"] = (
-            result["puff_offset_time"]
-            - result["puff_onset_time"]
+            result["puff_offset_index"]
+            - result["puff_onset_index"]
         )
-
         return result
