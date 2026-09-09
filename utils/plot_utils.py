@@ -26,7 +26,12 @@ class PlotUtils:
 
         # Single numpy array
         elif isinstance(y_values, np.ndarray):
-            y_values = [y_values]
+            if y_values.ndim == 1:
+                y_values = [y_values]
+            elif y_values.ndim == 2:
+                y_values = y_values
+            else:
+                raise ValueError("y_values must be a 1D or 2D array.")
 
         # Generate x-values if none provided
         if x_values is None:

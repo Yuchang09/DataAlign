@@ -1,6 +1,6 @@
 import pandas as pd
-from scipy.signal import find_peaks
 from utils.msg_utils import Msg
+import numpy as np
 
 class AnalysisUtil:
 
@@ -153,3 +153,31 @@ class AnalysisUtil:
             - result["puff_onset_index"]
         )
         return result
+
+    @staticmethod
+    def calculate_dff(F, frame_rate, window_seconds=60, percentile=10):
+
+        window_frames = int(window_seconds * frame_rate)
+
+        if window_frames < 1:
+            raise ValueError("Window must contain at least one frame.")
+
+        F = np.asarray(F, dtype=float)
+
+        F_df = pd.DataFrame(F.T)
+
+        F0_df = (
+            F_df
+            .rolling(
+                window=window_frames,
+                center=True,
+                min_periods=1
+            )
+            .quantile(percentile / 100)
+        )
+
+        F0 = F0_df.to_numpy().T
+
+        dff = (F - F0) / F0
+
+        return dff, F0
