@@ -50,8 +50,6 @@ class DataUtils:
         if df.empty:
             return df
 
-        # Compare the original index to the previous index
         consecutive = df.index.to_series().diff() == 1
 
-        # Keep the first row and rows that are NOT consecutive
         return df[~consecutive]

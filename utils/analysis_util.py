@@ -181,3 +181,46 @@ class AnalysisUtil:
         dff = (F - F0) / F0
 
         return dff, F0
+
+    @staticmethod
+    def extract_trial_dff(dff, trials_df, trial_length=31, pre_frames=10,
+                          post_frames=10):
+
+        dff = np.asarray(dff)
+
+        trial_data = []
+        extracted_indices = []
+
+        total_frames = pre_frames + trial_length + post_frames
+
+        for idx, trial in trials_df.iterrows():
+
+            tone_onset = int(trial["tone_onset_index"])
+
+            start = tone_onset - pre_frames
+
+            end = start + total_frames
+
+            if start < 0 or end > dff.shape[1]:
+                continue
+
+            trial_dff = dff[:, start:end]
+
+            # Sanity check
+            if trial_dff.shape[1] != total_frames:
+                continue
+
+            trial_data.append(trial_dff)
+            extracted_indices.append(idx)
+
+        dff_trials = np.stack(trial_data, axis=0)
+
+        extracted_trials = trials_df.loc[extracted_indices].copy()
+        extracted_trials = extracted_trials.reset_index(drop=True)
+
+        relative_frames = np.arange(
+            -pre_frames,
+            trial_length + post_frames
+        )
+
+        return dff_trials, extracted_trials, relative_frames
