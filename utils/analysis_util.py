@@ -180,6 +180,7 @@ class AnalysisUtil:
 
         dff = (F - F0) / F0
 
+
         return dff, F0
 
     @staticmethod
