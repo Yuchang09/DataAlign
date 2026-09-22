@@ -67,15 +67,15 @@ def get_dff():
 
     iscell_df = pd.DataFrame(iscell)
 
-    filtered_iscell = DataUtils.filter_rows_by_threshold(
-        iscell_df,
-        column=1,
-        threshold=0.7,
-        operator=">"
-    )
+    # filtered_iscell = DataUtils.filter_rows_by_threshold(
+    #     iscell_df,
+    #     column=1,
+    #     threshold=0.7,
+    #     operator=">"
+    # )
 
     filtered_iscell = DataUtils.filter_rows_by_threshold(
-        filtered_iscell,
+        iscell_df,
         column=0,
         threshold=1,
         operator="=="
@@ -83,7 +83,6 @@ def get_dff():
 
     F_subset = F[filtered_iscell.index]
     dff, f0 = AnalysisUtil.calculate_dff(F_subset, 30, window_seconds=30, percentile=10)
-    print(dff)
     dff_data_path = PathUtils.join_path(mouse_file_dir, f"{mouse_id}_dff.csv")
     f0_data_path = PathUtils.join_path(mouse_file_dir, f"{mouse_id}_f0.csv")
     FileUtils.write_csv_file(dff_data_path, dff)
@@ -104,6 +103,8 @@ def get_trail_dff():
 
 
 def main():
+    filter_data()
+    get_dff()
     get_trail_dff()
 
 if __name__ == "__main__":
