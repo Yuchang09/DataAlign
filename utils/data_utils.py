@@ -61,7 +61,19 @@ class DataUtils:
         return np.nanmean(data, axis=axis)
 
     @staticmethod
-    def calculate_period_mean(data, event_markers, axis=1):
+    def calculate_max(data, axis=0):
+        return np.nanmax(data, axis=axis)
+
+    @staticmethod
+    def calculate_std(data, axis=0):
+        return np.nanstd(data, axis=axis)
+
+    @staticmethod
+    def calculate_zscore(data, mean, std):
+        return (data - mean) / std
+
+    @staticmethod
+    def calculate_period_stats(data, event_markers, axis=1, stats = "mean"):
         data = np.asarray(data)
 
         markers = sorted(event_markers.items())
@@ -70,7 +82,6 @@ class DataUtils:
         for i in range(len(markers) - 1):
             start_frame, start_name = markers[i]
             end_frame, end_name = markers[i + 1]
-            period_name = f"{start_name} - {end_name}"
 
             if axis == 1:
                 period_data = data[:, start_frame:end_frame]
@@ -79,10 +90,10 @@ class DataUtils:
             else:
                 raise ValueError("axis must be 0 or 1")
 
-            results[period_name] = DataUtils.calculate_mean(
-                period_data,
-                axis=axis
-            )
+            if stats == "mean":
+                results[i] = DataUtils.calculate_mean(period_data, axis=axis)
+            elif stats == "max":
+                results[i] = DataUtils.calculate_max(period_data, axis=axis)
 
         return pd.DataFrame(results)
 
@@ -116,3 +127,20 @@ class DataUtils:
         tone_puff = dff[remaining_trials]
 
         return tone_puff, tone_only
+
+    @staticmethod
+    def get_rest(dff, event_markers):
+        frames = sorted(event_markers.keys())
+        n_frames = dff.shape[1]
+
+        boundaries = frames + [n_frames]
+
+        results = {}
+
+        for i in range(len(boundaries) - 2):
+            start = boundaries[i]
+            end = boundaries[i + 1]
+            rest_data = np.concatenate([dff[:, :start], dff[:, end:]], axis=1)
+            results[i] = rest_data
+
+        return results

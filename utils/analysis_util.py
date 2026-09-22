@@ -165,12 +165,12 @@ class AnalysisUtil:
         }
 
         mean_dff = DataUtils.calculate_mean(dff, axis=1)
-        results = DataUtils.calculate_period_mean(mean_dff, event_markers)
+        results = DataUtils.calculate_period_stats(mean_dff, event_markers)
         PlotUtils.draw_line_plot(
             y_values=[
-                results["Tone onset - Tone offset"],
-                results["Tone offset - Puff onset"],
-                results["Puff onset - Puff offset"]
+                results["0"],
+                results["1"],
+                results["2"]
             ],
             labels=["Tone", "ISI", "Puff"],
             x_label="Trial",
@@ -215,4 +215,28 @@ class AnalysisUtil:
         periods = DataUtils.slice_by_markers(dff, event_markers, axis=0)
         for name, period in periods.items():
             AnalysisUtil.get_heatmap(period, 0, name)
+
+    @staticmethod
+    def classify_period_cells(dff, stats = "mean"):
+        event_markers = {
+            10: "tone onset",
+            19: "tone offset",
+            35: "puff onset",
+            41: "puff offset"
+        }
+
+        mean_dff = DataUtils.calculate_mean(dff, axis=0)
+        period_response = DataUtils.calculate_period_stats(mean_dff, event_markers, axis=1, stats = stats)
+        baseline_dff = DataUtils.get_rest(mean_dff, event_markers)
+        baseline_response = {k: DataUtils.calculate_mean(v, axis = 1) for k, v in baseline_dff.items()}
+        baseline_std = {k: DataUtils.calculate_std(v, axis = 1) for k, v in baseline_dff.items()}
+
+        z_scores = {}
+        for period in period_response:
+            z_scores[period] = DataUtils.calculate_zscore(period_response[period], baseline_response[period], baseline_std)
+        cells = {period: z_scores[period] >= 2 for period in z_scores}
+
+        return cells
+
+
 
