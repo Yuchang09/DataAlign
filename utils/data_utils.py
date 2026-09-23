@@ -141,6 +141,6 @@ class DataUtils:
             start = boundaries[i]
             end = boundaries[i + 1]
             rest_data = np.concatenate([dff[:, :start], dff[:, end:]], axis=1)
-            results[i] = rest_data
+            results[i] = dff
 
         return results

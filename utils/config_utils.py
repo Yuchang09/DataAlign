@@ -20,3 +20,16 @@ class DataConfig:
     elif MiceID == "m3d1":
         FilePath = r"/Users/yuchang/Downloads/m3d1/voltage.csv"
         Suite2pPath = r"/Users/yuchang/Downloads/m3d1/Fall.mat"
+
+    StimuliMarkers = {
+            10: "tone onset",
+            19: "tone offset",
+            35: "puff onset",
+            41: "puff offset"
+    }
+
+    TrailMarkers = {
+            18: "Early",
+            36: "Middle",
+            54: "Late"
+    }

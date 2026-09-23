@@ -157,15 +157,8 @@ class AnalysisUtil:
 
     @staticmethod
     def get_average_activiy_per_period_across_trails(dff):
-        event_markers = {
-            10: "Tone onset",
-            19: "Tone offset",
-            35: "Puff onset",
-            41: "Puff offset"
-        }
-
         mean_dff = DataUtils.calculate_mean(dff, axis=1)
-        results = DataUtils.calculate_period_stats(mean_dff, event_markers)
+        results = DataUtils.calculate_period_stats(mean_dff, DataConfig.StimuliMarkers)
         PlotUtils.draw_line_plot(
             y_values=[
                 results["0"],
@@ -181,13 +174,6 @@ class AnalysisUtil:
 
     @staticmethod
     def get_heatmap(dff, axis, slice = None):
-        event_markers = {
-            10: "tone onset",
-            19: "tone offset",
-            35: "puff onset",
-            41: "puff offset"
-        }
-
         mean_dff = DataUtils.calculate_mean(dff, axis=axis)
         if axis == 0:
             axis ="neuron"
@@ -201,42 +187,106 @@ class AnalysisUtil:
         else:
             savepath = PathUtils.join_path(DataConfig.mouse_plot_dir,
                                             f"{DataConfig.MiceID}_Heatmap_{axis}.png")
-        PlotUtils.draw_heatmap(mean_dff, sorted = sort, event_markers=event_markers, save_path = savepath)
+        PlotUtils.draw_heatmap(mean_dff, sorted = sort, event_markers=DataConfig.StimuliMarkers, save_path = savepath)
 
     @staticmethod
     def get_per_slice_heatmap(dff):
-        event_markers = {
-            11: "First",
-            22: "Second",
-            33: "Third",
-            44: "Fourth",
-            54: "Fifth"
-        }
-        periods = DataUtils.slice_by_markers(dff, event_markers, axis=0)
+        periods = DataUtils.slice_by_markers(dff, DataConfig.TrailMarkers, axis=0)
         for name, period in periods.items():
             AnalysisUtil.get_heatmap(period, 0, name)
 
     @staticmethod
-    def classify_period_cells(dff, stats = "mean"):
-        event_markers = {
-            10: "tone onset",
-            19: "tone offset",
-            35: "puff onset",
-            41: "puff offset"
-        }
-
+    def classify_period_cells(dff, threshold = 2, stats = "mean"):
         mean_dff = DataUtils.calculate_mean(dff, axis=0)
-        period_response = DataUtils.calculate_period_stats(mean_dff, event_markers, axis=1, stats = stats)
-        baseline_dff = DataUtils.get_rest(mean_dff, event_markers)
+        period_response = DataUtils.calculate_period_stats(mean_dff, DataConfig.StimuliMarkers, axis=1, stats = stats)
+        baseline_dff = DataUtils.get_rest(mean_dff, DataConfig.StimuliMarkers)
         baseline_response = {k: DataUtils.calculate_mean(v, axis = 1) for k, v in baseline_dff.items()}
         baseline_std = {k: DataUtils.calculate_std(v, axis = 1) for k, v in baseline_dff.items()}
 
         z_scores = {}
         for period in period_response:
-            z_scores[period] = DataUtils.calculate_zscore(period_response[period], baseline_response[period], baseline_std)
-        cells = {period: z_scores[period] >= 2 for period in z_scores}
+            z_scores[period] = DataUtils.calculate_zscore(period_response[period], baseline_response[period], baseline_std[period])
 
-        return cells
+        cells = {period: z_scores[period] >= threshold for period in z_scores}
+        periods = ["tone", "isi", "puff"]
 
+        z_matrix = np.column_stack([z_scores[i] for i in z_scores])
+        max_z = np.max(z_matrix, axis=1)
+        max_idx = np.argmax(z_matrix, axis=1)
+        identities = np.array(periods, dtype=object)[max_idx]
+        identities[max_z < threshold] = "none"
+
+        return identities, cells
+
+    @staticmethod
+    def classify_trials(dff, mode="slice", stats="max"):
+
+        if mode == "slice":
+            data_groups = DataUtils.slice_by_markers(dff, DataConfig.TrailMarkers, axis=0)
+
+        elif mode == "trial":
+            data_groups = {i: dff[i:i + 1] for i in range(dff.shape[0])}
+
+        elif mode == "all":
+            data_groups = {"all": dff}
+
+        else:
+            raise ValueError("mode must be 'session', 'trial', or 'all'")
+
+        classification = {}
+        for name, data in data_groups.items():
+            identities, cells = AnalysisUtil.classify_period_cells(data,stats=stats)
+            classification[name] = {"identities": identities, "cells": cells}
+
+        return classification
+
+    @staticmethod
+    def calculate_identity_stats(classification, stat="percentage", exclude_none = False):
+        names = list(classification.keys())
+        cell_types = np.unique(np.concatenate([classification[name]["identities"]for name in names]))
+
+        results = {}
+        if exclude_none:
+            cell_types = cell_types[cell_types != "none"]
+
+        for cell_type in cell_types:
+            results[cell_type] = []
+
+            for name in names:
+                identities = classification[name]["identities"]
+                if exclude_none:
+                    identities = identities[identities != "none"]
+
+                count = np.sum(identities == cell_type)
+
+                if stat == "count":
+                    results[cell_type].append(count)
+
+                elif stat == "percentage":
+                    results[cell_type].append(count / len(identities) * 100)
+
+                else:
+                    raise ValueError("stat must be 'count' or 'percentage'")
+
+        return names, cell_types, results
+
+    @staticmethod
+    def calculate_transition_probability(
+            identities_before,
+            identities_after
+    ):
+        cell_types = np.unique(np.concatenate([identities_before, identities_after]))
+        transition = np.zeros((len(cell_types), len(cell_types)))
+
+        for i, before_type in enumerate(cell_types):
+            mask = identities_before == before_type
+
+            for j, after_type in enumerate(cell_types):
+                transition[i, j] = np.sum(identities_after[mask] == after_type)
+
+            if np.sum(mask) > 0:
+                transition[i] /= np.sum(mask)
+
+        return cell_types, transition
 
 
