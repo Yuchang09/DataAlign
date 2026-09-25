@@ -145,9 +145,9 @@ class PlotUtils:
 
         if relative_frames is not None:
             extent = (relative_frames[0], relative_frames[-1], plot_dff.shape[0], 0)
-            im = ax.imshow(plot_dff, aspect="auto", vmin=vmin, vmax=vmax, extent=extent)
+            im = ax.imshow(plot_dff, aspect="auto", extent=extent)
         else:
-            im = ax.imshow(plot_dff, aspect="auto", vmin=vmin, vmax=vmax, origin="upper")
+            im = ax.imshow(plot_dff, aspect="auto", origin="upper")
         if event_markers is not None:
             for frame, event_name in event_markers.items():
                 ax.axvline(

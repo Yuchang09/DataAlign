@@ -2,11 +2,14 @@ from utils.path_utils import PathUtils
 
 
 class DataConfig:
-    MiceID = "m3d1"
+    MiceID = "m4d1"
     dffPath = rf"files/{MiceID}/{MiceID}_dff.csv"
+    z_scorePath = rf"files/{MiceID}/{MiceID}_z_score.csv"
     TrailsPath = rf"files/{MiceID}/{MiceID}_trails.csv"
     DffTrailPath = rf"files/{MiceID}/{MiceID}_dff_trails.npz"
+    z_scoreTrailPath = rf"files/{MiceID}/{MiceID}_z_score_trails.npz"
     mouse_plot_dir = PathUtils.make_mouse_plot_dir(MiceID)
+    DataType = "z_score"
 
     if MiceID == "m6d1":
         FilePath = r"C:\imageripping\m6d1\20260124_timeseries_m6_d1_900_las500p900_29.3fps_1x_int187_tonepuff-223\20260124_timeseries_m6_d1_900_las500p900_29.3fps_1x_int187_tonepuff-223_Cycle00001_VoltageRecording_001.csv"
@@ -20,6 +23,11 @@ class DataConfig:
     elif MiceID == "m3d1":
         FilePath = r"/Users/yuchang/Downloads/m3d1/voltage.csv"
         Suite2pPath = r"/Users/yuchang/Downloads/m3d1/Fall.mat"
+    elif MiceID == "m4d1":
+        FilePath = r"/Users/yuchang/Downloads/m4d1/voltage.csv"
+        Suite2pPath = r"/Users/yuchang/Downloads/m4d1/Fall.mat"
+
+
 
     StimuliMarkers = {
             10: "tone onset",
@@ -33,3 +41,14 @@ class DataConfig:
             36: "Middle",
             54: "Late"
     }
+
+    TimeMarkers = {
+        10: "start",
+        130: "end"
+    }
+
+    Markers = {
+        51: "end"
+    }
+
+

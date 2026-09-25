@@ -1,6 +1,6 @@
 import pandas as pd
 from utils.msg_utils import Msg
-from scipy.io import loadmat
+from scipy.io import loadmat, savemat
 import numpy as np
 
 class FileUtils:
@@ -20,6 +20,15 @@ class FileUtils:
 
         except Exception:
             Msg.print_error("Error while reading from " + filepath)
+            raise
+
+    @staticmethod
+    def write_mat_file(filepath, data):
+        try:
+            savemat(filepath, data)
+
+        except Exception:
+            Msg.print_error("Error while writing to " + filepath)
             raise
 
     @staticmethod

@@ -124,10 +124,10 @@ class AnalysisUtil:
         return dff, F0
 
     @staticmethod
-    def extract_trial_dff(dff, trials_df, trial_length=31, pre_frames=10,
-                          post_frames=10):
+    def extract_trial_data(data, trials_df, trial_length=31, pre_frames=10,
+                           post_frames=10):
 
-        dff = np.asarray(dff)
+        data = np.asarray(data)
         trial_data = []
         extracted_indices = []
         total_frames = pre_frames + trial_length + post_frames
@@ -137,23 +137,23 @@ class AnalysisUtil:
             start = tone_onset - pre_frames
             end = start + total_frames
 
-            if start < 0 or end > dff.shape[1]:
+            if start < 0 or end > data.shape[1]:
                 continue
 
-            trial_dff = dff[:, start:end]
+            current_trial = data[:, start:end]
 
-            if trial_dff.shape[1] != total_frames:
+            if current_trial.shape[1] != total_frames:
                 continue
 
-            trial_data.append(trial_dff)
+            trial_data.append(current_trial)
             extracted_indices.append(idx)
 
-        dff_trials = np.stack(trial_data, axis=0)
+        data_trials = np.stack(trial_data, axis=0)
         extracted_trials = trials_df.loc[extracted_indices].copy()
         extracted_trials = extracted_trials.reset_index(drop=True)
         relative_frames = np.arange(-pre_frames,trial_length + post_frames)
 
-        return dff_trials, extracted_trials, relative_frames
+        return data_trials, extracted_trials, relative_frames
 
     @staticmethod
     def get_average_activiy_per_period_across_trails(dff):
@@ -288,5 +288,22 @@ class AnalysisUtil:
                 transition[i] /= np.sum(mask)
 
         return cell_types, transition
+
+    @staticmethod
+    def subset_neurons(data, cutoff_percent = 0.1):
+        smashed = DataUtils.calculate_mean(data, axis = 0)
+        periods = DataUtils.slice_by_markers(smashed, DataConfig.TimeMarkers, axis=1)
+
+        smashed = DataUtils.calculate_mean(periods["end"], axis = 1)
+        sort_idx = np.argsort(smashed)[::-1]
+        result = data[:, sort_idx, :]
+
+        n_top = int(result.shape[1] * cutoff_percent)
+        top_10_percent = result[:, :n_top, :]
+
+        return top_10_percent
+
+
+
 
 
